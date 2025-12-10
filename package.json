@@ -1,8 +1,9 @@
 {
   "name": "orbit-pomodoro-backend",
-  "version": "2.0.0",
-  "main": "app.js",
-  "scripts": {
+  "version": "3.0.0",
+  "description": "Backend API for Orbit Pomodoro v3.0 with authentication",
+  "main":  "app.js",
+  "scripts":  {
     "start": "node app.js",
     "dev": "nodemon app.js"
   },
@@ -11,7 +12,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express":  "^4.21.2",
+    "express": "^4.21.2",
     "mongoose": "^6.13.8"
   },
   "devDependencies": {
@@ -23,8 +24,9 @@
   "keywords": [
     "pomodoro",
     "productivity",
-    "api"
+    "api",
+    "authentication"
   ],
-  "author":  "ritah0824",
+  "author": "ritah0824",
   "license": "MIT"
 }
