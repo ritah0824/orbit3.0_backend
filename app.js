@@ -16,20 +16,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// CORS Configuration for your existing deployment
+// CORS Configuration with environment variables
 const allowedOrigins = process.env. ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+    ? process.env. ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
     : ['http://localhost:3001', 'http://localhost:5173'];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, curl, Postman)
         if (!origin) return callback(null, true);
         
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            console.log(`❌ CORS blocked request from: ${origin}`);
+            console.log(`❌ CORS blocked request from origin: ${origin}`);
             callback(new Error('Not allowed by CORS'));
         }
     },
@@ -44,7 +43,7 @@ app.use(cors({
 
 mongoose.set('strictQuery', false);
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/time_db';
+const MONGODB_URI = process.env. MONGODB_URI || 'mongodb://localhost:27017/time_db';
 
 console.log('🚀 Starting Orbit Pomodoro API...');
 console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -68,7 +67,7 @@ const taskSchema = new mongoose.Schema({
     name: { type: String, required: true },
     num:  { type: Number, default: 1 },
     finish: { type: Number, default: 0 },
-    user: { type: String, required: true }, // Keep as String for backward compatibility
+    user: { type: String, required: true },
     day: Number
 }, { timestamps: true });
 
@@ -88,7 +87,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const recordSchema = new mongoose.Schema({
-    user: { type: String, required:  true } // Keep as String for backward compatibility
+    user: { type: String, required:  true }
 }, { timestamps: true });
 
 const Task = mongoose.model('Task', taskSchema);
@@ -125,8 +124,8 @@ const requireAuth = async (req, res, next) => {
 
 app.get('/', (req, res) => {
     res.json({
-        status: '🪐 Orbit Pomodoro API is running! ',
-        version: '2.0.0',
+        status: '🪐 Orbit Pomodoro API is running!',
+        version: '3.0.0',
         timestamp: new Date(),
         environment: process.env. NODE_ENV || 'development'
     });
@@ -136,7 +135,7 @@ app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
         mongodb: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
-        uptime: process.uptime()
+        uptime:  process.uptime()
     });
 });
 
@@ -147,7 +146,7 @@ app.get('/health', (req, res) => {
 // LOGIN
 app.post('/login', async (req, res) => {
     try {
-        const { name, password } = req.body;
+        const { name, password } = req. body;
 
         if (!name || !password) {
             return res.status(400).json({
@@ -181,7 +180,7 @@ app.post('/login', async (req, res) => {
             expires: expires,
             httpOnly: true,
             secure: process. env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+            sameSite:  process.env.NODE_ENV === 'production' ? 'none' : 'lax'
         });
 
         console.log(`✅ User logged in: ${user.name}`);
@@ -249,11 +248,11 @@ app.post('/signup', async (req, res) => {
         const expires = new Date();
         expires.setHours(expires.getHours() + 24);
         
-        res. cookie('user', user._id. toString(), {
+        res.cookie('user', user._id.toString(), {
             expires: expires,
             httpOnly: true,
-            secure: process.env. NODE_ENV === 'production',
-            sameSite: process. env.NODE_ENV === 'production' ? 'none' :  'lax'
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ?  'none' : 'lax'
         });
 
         console.log(`✅ New user created: ${user.name}`);
@@ -382,9 +381,9 @@ app.patch('/updateTask/:id', requireAuth, async (req, res) => {
         const { id } = req.params;
 
         if (finish === undefined) {
-            return res. status(400).json({
+            return res.status(400).json({
                 success: false,
-                error:  'Finish value is required'
+                error: 'Finish value is required'
             });
         }
 
@@ -401,7 +400,7 @@ app.patch('/updateTask/:id', requireAuth, async (req, res) => {
         }
 
         task.finish = parseInt(finish);
-        await task.save();
+        await task. save();
 
         const tasks = await Task.find({
             user: req.userId
@@ -481,7 +480,7 @@ app.delete('/deleteAll', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// ROUTES - RECORDS (POMODORO COMPLETIONS)
+// ROUTES - RECORDS
 // ============================================
 
 // ADD RECORD
@@ -507,7 +506,7 @@ app.post('/recordAdd', requireAuth, async (req, res) => {
     }
 });
 
-// GET REPORT (Last 7 days)
+// GET REPORT
 app.get('/report', requireAuth, async (req, res) => {
     try {
         const oneWeekAgo = new Date();
@@ -521,7 +520,7 @@ app.get('/report', requireAuth, async (req, res) => {
                 }
             },
             {
-                $group:  {
+                $group: {
                     _id: {
                         $dateToString: {
                             format: '%Y-%m-%d',
@@ -557,208 +556,6 @@ app.get('/report', requireAuth, async (req, res) => {
         });
     }
 });
-
-// ============================================
-// BACKWARD COMPATIBILITY ROUTES (keep old GET endpoints)
-// ============================================
-
-// Old endpoints for gradual migration
-app.get('/addTask', requireAuth, async (req, res) => {
-    try {
-        const { name, num } = req.query;
-        
-        if (!name || !name.trim()) {
-            return res.status(400).json({
-                success: false,
-                error: 'Task name is required'
-            });
-        }
-
-        const task = new Task({
-            name: name.trim(),
-            num: parseInt(num) || 1,
-            finish: 0,
-            user:  req.userId
-        });
-
-        await task.save();
-
-        const tasks = await Task.find({
-            user: req.userId
-        }).sort({ createdAt: 1 });
-
-        res.json({
-            success: true,
-            data: tasks
-        });
-    } catch (error) {
-        console.error('Error adding task:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to add task'
-        });
-    }
-});
-
-app.get('/updateTask', requireAuth, async (req, res) => {
-    try {
-        const { id, finish } = req.query;
-
-        if (! id || finish === undefined) {
-            return res.status(400).json({
-                success: false,
-                error: 'Task ID and finish value are required'
-            });
-        }
-
-        const task = await Task.findOne({
-            _id: id,
-            user: req.userId
-        });
-
-        if (!task) {
-            return res.status(404).json({
-                success: false,
-                error: 'Task not found'
-            });
-        }
-
-        task.finish = parseInt(finish);
-        await task. save();
-
-        const tasks = await Task.find({
-            user: req.userId
-        }).sort({ createdAt: 1 });
-
-        res.json({
-            success: true,
-            data:  tasks
-        });
-    } catch (error) {
-        console.error('Error updating task:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to update task'
-        });
-    }
-});
-
-app.get('/deleteTask', requireAuth, async (req, res) => {
-    try {
-        const { id } = req.query;
-
-        if (!id) {
-            return res.status(400).json({
-                success: false,
-                error: 'Task ID is required'
-            });
-        }
-
-        const result = await Task.findOneAndDelete({
-            _id:  id,
-            user: req. userId
-        });
-
-        if (!result) {
-            return res. status(404).json({
-                success: false,
-                error:  'Task not found'
-            });
-        }
-
-        const tasks = await Task.find({
-            user: req.userId
-        }).sort({ createdAt: 1 });
-
-        res.json({
-            success: true,
-            data: tasks
-        });
-    } catch (error) {
-        console.error('Error deleting task:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to delete task'
-        });
-    }
-});
-
-app.get('/deleteAll', requireAuth, async (req, res) => {
-    try {
-        await Task.deleteMany({
-            user: req.userId
-        });
-
-        res.json({
-            success: true,
-            data: []
-        });
-    } catch (error) {
-        console.error('Error deleting all tasks:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to delete all tasks'
-        });
-    }
-});
-
-app.get('/recordAdd', requireAuth, async (req, res) => {
-    try {
-        const record = new Record({
-            user:  req.userId
-        });
-        
-        await record.save();
-
-        res.json({
-            success: true
-        });
-    } catch (error) {
-        console.error('Error recordAdd:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to add record'
-        });
-    }
-});
-
-// ============================================
-// ADMIN ROUTES (Development Only)
-// ============================================
-
-if (process.env.NODE_ENV !== 'production') {
-    app.get('/users', async (req, res) => {
-        try {
-            const users = await User.find({}).select('-password');
-            res.json({
-                success: true,
-                count: users.length,
-                data: users
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                error: 'Failed to get users'
-            });
-        }
-    });
-
-    app.get('/records', async (req, res) => {
-        try {
-            const records = await Record.find({});
-            res.json({
-                success: true,
-                count:  records.length,
-                data: records
-            });
-        } catch (error) {
-            res.status(500).json({
-                success: false,
-                error:  'Failed to get records'
-            });
-        }
-    });
-}
 
 // ============================================
 // HELPER FUNCTIONS
@@ -799,7 +596,7 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ============================================
 
-app. listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Ready to accept requests from:  ${allowedOrigins.join(', ')}`);
 });
