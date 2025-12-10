@@ -1,0 +1,16 @@
+# Server Configuration
+PORT=3000
+NODE_ENV=production
+
+# Database Connection (Update password!)
+MONGODB_URI=mongodb+srv://rhuang: <db_password>@pomodoro2.kglefqb.mongodb.net/?appName=pomodoro2
+
+# CORS - Allowed frontend origins
+ALLOWED_ORIGINS=https://orbit-v3.netlify.app
+
+# ===================================
+# For Local Development: 
+# ===================================
+# NODE_ENV=development
+# MONGODB_URI=mongodb://localhost:27017/time_db
+# ALLOWED_ORIGINS=http://localhost:3001,http://localhost:5173
